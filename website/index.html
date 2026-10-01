@@ -1,0 +1,81 @@
+<!doctype html>
+<html lang="de">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>ML-Kurs – Übersicht</title>
+  <link rel="stylesheet" href="assets/css/style.css">
+</head>
+<body>
+  <header class="topbar">
+    <a class="brand" href="index.html">ML-Kurs</a>
+    <span class="spacer"></span>
+    <button class="icon-btn" id="reset-btn" title="Gesamten Fortschritt löschen">Fortschritt zurücksetzen</button>
+    <button class="icon-btn" id="theme-btn" aria-label="Hell/Dunkel umschalten">◐ Theme</button>
+  </header>
+
+  <section class="hero">
+    <h1>Machine Learning – von vorne bis hinten</h1>
+    <p>Ein Kurs von den mathematischen Grundlagen über scikit-learn und jedes klassische Modell bis zu Deep Learning,
+      Transformern und Reinforcement Learning. Jede Lektion: <b>Intuition &amp; Animation → Mathematik → Code</b>.</p>
+    <div class="overall"><div class="bar"><div id="overall-bar"></div></div><span id="overall-text"></span></div>
+  </section>
+
+  <section class="howto">
+    <div class="card"><h3>🎬 Animationen &amp; Videos</h3><p>Interaktive Animationen direkt in der Lektion (ziehen, Regler bewegen) und gerenderte Erklärvideos.</p></div>
+    <div class="card"><h3>❓ Quizze</h3><p>Am Ende jeder Lektion – mit Erklärung, warum eine Antwort richtig oder falsch ist.</p></div>
+    <div class="card"><h3>💻 Notebooks</h3><p>Jupyter-Übungen mit Lückencode im Ordner <code>notebooks/</code>, Lösungen im Unterordner <code>loesungen/</code>.</p></div>
+    <div class="card"><h3>🛠 Mini-Projekte</h3><p>Pro Modul ein Projekt, in dem du das Gelernte von Anfang bis Ende anwendest.</p></div>
+  </section>
+
+  <section class="grid" id="modules"></section>
+
+  <script src="assets/js/course.js"></script>
+  <script src="assets/js/app.js"></script>
+  <script>
+    (function () {
+      const { Progress, Store } = ML;
+      const grid = document.getElementById("modules");
+
+      function render() {
+        let total = 0, done = 0;
+        grid.innerHTML = COURSE.modules.map(m => {
+          const ready = m.status === "fertig";
+          let body, actions = "";
+          if (ready) {
+            total += m.lessons.length;
+            const n = m.lessons.filter(l => Progress.isDone(l.id)).length;
+            done += n;
+            body = `<ul>${m.lessons.map(l => `<li>${Progress.isDone(l.id) ? "✓ " : ""}${l.title}</li>`).join("")}</ul>
+              <div class="mbar"><div style="width:${Math.round(n / m.lessons.length * 100)}%"></div></div>`;
+            const next = m.lessons.find(l => !Progress.isDone(l.id)) || m.lessons[0];
+            actions = `<div class="actions"><a class="btn" href="${m.dir}/${next.file}">${n ? (n === m.lessons.length ? "Wiederholen" : "Weitermachen") : "Starten"} →</a></div>`;
+          } else {
+            body = `<ul>${m.topics.map(t => `<li>${t}</li>`).join("")}</ul>`;
+          }
+          return `<article class="module-card ${ready ? "ready" : ""}" id="${m.id}">
+            <span class="nr">MODUL ${String(m.nr).padStart(2, "0")}</span>
+            <h3>${m.title}</h3><p>${m.subtitle}</p>
+            <span class="badge">${ready ? "verfügbar" : "geplant"}</span>
+            ${body}${actions}</article>`;
+        }).join("");
+        const ratio = total ? done / total : 0;
+        document.getElementById("overall-bar").style.width = Math.round(ratio * 100) + "%";
+        document.getElementById("overall-text").textContent = `${done} von ${total} verfügbaren Lektionen erledigt`;
+      }
+
+      document.getElementById("theme-btn").addEventListener("click", () => {
+        const t = document.documentElement.getAttribute("data-theme") === "dark" ? "light" : "dark";
+        document.documentElement.setAttribute("data-theme", t);
+        Store.set("theme", t);
+      });
+      document.getElementById("reset-btn").addEventListener("click", () => {
+        if (confirm("Gesamten Fortschritt (erledigte Lektionen und Quiz-Ergebnisse) löschen?")) {
+          Store.set("done", {}); Store.set("quiz", {}); render();
+        }
+      });
+      render();
+    })();
+  </script>
+</body>
+</html>

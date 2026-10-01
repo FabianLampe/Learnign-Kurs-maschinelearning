@@ -1,0 +1,90 @@
+<!doctype html>
+<html lang="de">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Mini-Projekt 1: Regression von Hand – ML-Kurs</title>
+  <link rel="stylesheet" href="../assets/vendor/katex/katex.min.css">
+  <link rel="stylesheet" href="../assets/css/style.css">
+</head>
+<body data-lesson="m01-p01" data-root="../">
+<main>
+  <h1>🛠 Mini-Projekt: Regression von Hand</h1>
+  <p class="lead">Du baust eine lineare Regression mit Gradientenabstieg komplett selbst – nur mit NumPy – und trainierst sie auf einem echten medizinischen Datensatz.
+    Am Ende vergleichst du dein Modell mit scikit-learn. Wenn deine Zahlen übereinstimmen, hast du Modul 1 wirklich verstanden.</p>
+
+  <div class="goals">
+    <h3>Was du anwendest</h3>
+    <ul>
+      <li>Daten als Matrix \(X\) und Vektor \(y\), vektorisierte Vorhersage \(\hat y = Xw + b\) (Lektion 2)</li>
+      <li>Standardisierung mit Mittelwert und Standardabweichung (Lektion 3)</li>
+      <li>Gradienten des MSE über die Kettenregel, geprüft mit numerischen Ableitungen (Lektion 4)</li>
+      <li>Gradientenabstieg, Lernrate, Lernkurven, Mini-Batches (Lektion 5)</li>
+    </ul>
+  </div>
+
+  <h2>Der Datensatz</h2>
+  <p>Der <b>Diabetes-Datensatz</b> ist in scikit-learn enthalten (kein Download nötig): 442 Patientinnen und Patienten, 10 Merkmale
+    (Alter, Geschlecht, BMI, Blutdruck und sechs Blutwerte) und als Zielgröße ein Maß für das Fortschreiten der Krankheit ein Jahr später.</p>
+<pre><code>from sklearn.datasets import load_diabetes
+X, y = load_diabetes(return_X_y=True, scaled=False)   # X.shape == (442, 10)
+</code></pre>
+
+  <h2>Aufgaben</h2>
+  <ol>
+    <li><b>Erkunden:</b> Berechne Mittelwert und Standardabweichung jedes Features. Welches Feature korreliert am stärksten mit \(y\)? Zeichne ein Streudiagramm.</li>
+    <li><b>Aufteilen:</b> Teile die Daten zufällig in 80 % Training und 20 % Test – mit NumPy (<code>np.random.default_rng(42).permutation</code>), ohne scikit-learn.</li>
+    <li><b>Standardisieren:</b> Schreibe eine Funktion, die Mittelwert und Standardabweichung <b>nur auf den Trainingsdaten</b> berechnet und dann Training und Test damit transformiert.
+      Warum nur auf den Trainingsdaten? (Stichwort <i>Data Leakage</i>)</li>
+    <li><b>Modell 1D:</b> Trainiere eine Regression nur mit dem BMI. Zeichne Daten und gelernte Gerade.</li>
+    <li><b>Gradient prüfen:</b> Implementiere <code>mse_gradient(X, y, w, b)</code> und vergleiche ihn mit numerischen Ableitungen. Die Abweichung sollte unter \(10^{-6}\) liegen.</li>
+    <li><b>Modell mit allen Features:</b> Trainiere mit Batch-Gradientenabstieg. Zeichne die Lernkurve für die Lernraten 0,001 / 0,01 / 0,1 / 1,0 in ein Diagramm. Welche divergiert?</li>
+    <li><b>Mini-Batch:</b> Implementiere Mini-Batch-GD (Batchgröße 32, Daten in jeder Epoche neu mischen). Vergleiche die Lernkurve mit Batch-GD.</li>
+    <li><b>Vergleich mit scikit-learn:</b> Trainiere <code>LinearRegression</code> auf denselben standardisierten Daten. Stimmen Gewichte und Test-MSE mit deinen überein?</li>
+    <li><b>Ohne Standardisierung:</b> Wiederhole Schritt 6 mit den unskalierten Daten. Welche Lernrate funktioniert jetzt noch? Erkläre das mit der Animation aus Lektion 5.</li>
+    <li><b>Deuten:</b> Welche drei Features haben die betragsmäßig größten Gewichte? Warum darf man Gewichte nur bei standardisierten Features so vergleichen?</li>
+  </ol>
+
+  <h2>Erfolgskriterien</h2>
+  <ul>
+    <li>Dein Gradient stimmt mit dem numerischen Gradienten überein.</li>
+    <li>Deine Gewichte weichen um weniger als 1 % von <code>LinearRegression</code> ab.</li>
+    <li>Mit dem Split aus Aufgabe 2 (Seed 42) liegt der Test-MSE bei etwa 2 600 (\(R^2 \approx 0{,}59\)). Die Baseline „immer den Mittelwert vorhersagen“ liegt bei etwa 6 400.</li>
+    <li>Du kannst in eigenen Worten erklären, warum auf unskalierten Daten nur winzige Lernraten stabil sind – und warum das Training dann trotzdem kaum vorankommt.</li>
+  </ul>
+
+  <div class="callout">
+    <span class="label">Hinweise</span>
+    <ul style="margin:.3rem 0">
+      <li>Fang klein an: Erst 1 Feature, dann alle. Erst prüfen, dann trainieren.</li>
+      <li>Druck in den ersten Epochen den Verlust aus. Steigt er, ist die Lernrate zu groß oder das Vorzeichen des Gradienten falsch.</li>
+      <li>Ein \(R^2\) von knapp 0,6 heißt: 40 % der Streuung erklärt das Modell nicht – der Datensatz ist verrauscht, und das ist realistisch. Vergleiche immer mit einer Baseline: Was ist der MSE, wenn du stur den Mittelwert von \(y\) vorhersagst?</li>
+    </ul>
+  </div>
+
+  <div class="card notebook-link">
+    <div>💻 <b>Projekt-Notebook:</b> <code>notebooks/modul-01/06_projekt_regression.ipynb</code><br>
+      <span style="color:var(--text-2)">Gerüst mit allen Aufgaben und Lückencode. Die vollständige Lösung liegt in <code>loesungen/06_projekt_regression_loesung.ipynb</code> – schau erst rein, wenn du feststeckst.</span></div>
+  </div>
+
+  <h2>Rückblick auf Modul 1</h2>
+  <p>Du hast jetzt das Fundament, auf dem alle weiteren Module stehen:</p>
+  <div class="table-wrap">
+  <table>
+    <tr><th>Gelernt</th><th>Kommt wieder in …</th></tr>
+    <tr><td>Skalarprodukt, Matrixmultiplikation</td><td>lineare Modelle, SVM, neuronale Netze, Attention</td></tr>
+    <tr><td>Distanzen &amp; Skalierung</td><td>kNN, k-Means, DBSCAN, SVM mit RBF-Kernel</td></tr>
+    <tr><td>Wahrscheinlichkeit, Bayes, Maximum Likelihood</td><td>Naive Bayes, logistische Regression, Gaussian Mixtures, Sprachmodelle</td></tr>
+    <tr><td>Varianz, Kovarianz</td><td>Bias-Varianz-Tradeoff, PCA, Random Forest (Varianzreduktion)</td></tr>
+    <tr><td>Gradient, Kettenregel</td><td>Backpropagation, Gradient Boosting (das „Gradient“ im Namen!)</td></tr>
+    <tr><td>Verlustfunktionen, Gradientenabstieg</td><td>praktisch jedes Modell ab Modul 3</td></tr>
+  </table>
+  </div>
+  <p>In <b>Modul 2</b> geht es um den professionellen Workflow mit scikit-learn: Pipelines, Kreuzvalidierung, Metriken und die Frage, wie man zuverlässig misst, ob ein Modell gut ist.</p>
+</main>
+<script src="../assets/vendor/katex/katex.min.js"></script>
+<script src="../assets/vendor/katex/auto-render.min.js"></script>
+<script src="../assets/js/course.js"></script>
+<script src="../assets/js/app.js"></script>
+</body>
+</html>

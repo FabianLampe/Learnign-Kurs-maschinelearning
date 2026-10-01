@@ -1,0 +1,166 @@
+<!doctype html>
+<html lang="de">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>1.2 Vektoren, Matrizen &amp; Daten – ML-Kurs</title>
+  <link rel="stylesheet" href="../assets/vendor/katex/katex.min.css">
+  <link rel="stylesheet" href="../assets/css/style.css">
+</head>
+<body data-lesson="m01-l02" data-root="../">
+<main>
+  <h1>Vektoren, Matrizen &amp; Daten</h1>
+  <p class="lead">Jeder Datenpunkt ist ein Vektor, jeder Datensatz eine Matrix, und fast jedes Modell besteht im Kern aus Skalarprodukten und
+    Matrixmultiplikationen. Lineare Algebra ist die Sprache des Machine Learning.</p>
+
+  <div class="goals">
+    <h3>Lernziele</h3>
+    <ul>
+      <li>Du siehst Datenpunkte als Vektoren und Datensätze als Matrizen.</li>
+      <li>Du kannst Skalarprodukt, Länge (Norm) und Distanz berechnen und geometrisch deuten.</li>
+      <li>Du verstehst Matrix-Vektor- und Matrix-Matrix-Multiplikation – und warum ein lineares Modell \(\hat y = Xw + b\) ist.</li>
+      <li>Du kannst all das in NumPy vektorisiert ausdrücken.</li>
+    </ul>
+  </div>
+
+  <h2>Datenpunkte sind Vektoren</h2>
+  <p>Eine Wohnung mit 78 m², 3 Zimmern und Baujahr 2010 ist für das Modell einfach eine Liste von Zahlen – ein <b>Vektor</b>:</p>
+  \[ x = \begin{pmatrix} 78 \\ 3 \\ 2010 \end{pmatrix} \in \mathbb{R}^3 \]
+  <p>Die Anzahl der Features ist die <b>Dimension</b>. Zwei Features kann man als Punkt in der Ebene zeichnen, drei im Raum.
+    Echte Datensätze haben oft Hunderte oder Millionen Dimensionen – vorstellen kann man sich das nicht mehr, aber die Rechenregeln bleiben exakt dieselben.
+    Deshalb üben wir die Intuition in 2D.</p>
+  <p>Stapeln wir \(n\) Datenpunkte als Zeilen übereinander, erhalten wir die <b>Datenmatrix</b> \(X\) mit \(n\) Zeilen und \(d\) Spalten
+    (\(X \in \mathbb{R}^{n \times d}\)). In NumPy: <code>X.shape == (n, d)</code>.</p>
+
+  <h2>Die wichtigsten Rechenoperationen</h2>
+  <h3>Addition und Skalierung</h3>
+  <p>Vektoren addiert man komponentenweise, und eine Multiplikation mit einer Zahl (einem <b>Skalar</b>) streckt einen Vektor:</p>
+  \[ \begin{pmatrix} 1 \\ 2 \end{pmatrix} + \begin{pmatrix} 3 \\ -1 \end{pmatrix} = \begin{pmatrix} 4 \\ 1 \end{pmatrix}, \qquad 2 \cdot \begin{pmatrix} 1 \\ 2 \end{pmatrix} = \begin{pmatrix} 2 \\ 4 \end{pmatrix} \]
+  <p>Genau das passiert in jedem Schritt des Gradientenabstiegs (Lektion 5): neue Parameter = alte Parameter − Lernrate · Gradient.</p>
+
+  <h3>Das Skalarprodukt</h3>
+  <p>Das <b>Skalarprodukt</b> (<span class="term">dot product</span>) zweier Vektoren multipliziert die Komponenten paarweise und summiert:</p>
+  \[ a \cdot b = \sum_{i=1}^{d} a_i b_i = a_1 b_1 + a_2 b_2 + \dots + a_d b_d \]
+  <p>Geometrisch gilt \(a \cdot b = \lVert a \rVert \, \lVert b \rVert \cos\theta\), wobei \(\theta\) der Winkel zwischen den Vektoren ist. Daraus folgt:</p>
+  <ul>
+    <li>\(a \cdot b > 0\): die Vektoren zeigen in ähnliche Richtung</li>
+    <li>\(a \cdot b = 0\): sie stehen senkrecht (<b>orthogonal</b>)</li>
+    <li>\(a \cdot b < 0\): sie zeigen in entgegengesetzte Richtungen</li>
+  </ul>
+  <div data-anim="skalarprodukt"></div>
+  <p>Die grüne Strecke ist die <b>Projektion</b> von \(b\) auf \(a\): der „Schatten“ von \(b\) in Richtung \(a\). Ihre Länge ist \(\frac{a \cdot b}{\lVert a \rVert}\).</p>
+
+  <figure class="video">
+    <video controls preload="metadata" src="../assets/videos/m01_v02_skalarprodukt.mp4"></video>
+    <figcaption>Erklärvideo: Das Skalarprodukt als Maß für Ähnlichkeit</figcaption>
+  </figure>
+
+  <div class="callout intuition">
+    <span class="label">Warum das im ML überall ist</span>
+    <ul style="margin:.3rem 0">
+      <li>Ein lineares Modell berechnet \(\hat y = w \cdot x + b\): ein Skalarprodukt aus Gewichten und Features.</li>
+      <li>Ein Neuron in einem neuronalen Netz tut dasselbe und wendet danach eine Aktivierungsfunktion an.</li>
+      <li>Die <b>Kosinus-Ähnlichkeit</b> \(\cos\theta = \frac{a \cdot b}{\lVert a \rVert \lVert b \rVert}\) vergleicht Texte, Bilder und Embeddings – z.&nbsp;B. in Suchmaschinen und RAG-Systemen.</li>
+      <li>Der Attention-Mechanismus in Transformern besteht im Kern aus Skalarprodukten zwischen „Queries“ und „Keys“.</li>
+    </ul>
+  </div>
+
+  <h3>Länge und Distanz</h3>
+  <p>Die <b>euklidische Norm</b> (Länge) eines Vektors ist \(\lVert x \rVert_2 = \sqrt{x \cdot x} = \sqrt{x_1^2 + \dots + x_d^2}\).
+    Die Distanz zweier Punkte ist die Länge ihres Differenzvektors. Je nach Anwendung nutzt man verschiedene Distanzmaße:</p>
+  \[ d_2(p, q) = \sqrt{\sum_i (p_i - q_i)^2} \quad\text{(euklidisch, L2)}, \qquad d_1(p, q) = \sum_i |p_i - q_i| \quad\text{(Manhattan, L1)} \]
+  <div data-anim="distanzen"></div>
+  <div class="callout warn">
+    <span class="label">Achtung: Skalierung</span>
+    Distanzen hängen stark von den Einheiten ab. Misst ein Feature die Fläche in m² (Werte um 100) und ein anderes die Zimmerzahl (Werte um 3),
+    dominiert die Fläche jede Distanz. Distanzbasierte Verfahren wie kNN, k-Means oder SVM brauchen deshalb fast immer <b>skalierte Features</b>
+    (z.&nbsp;B. <code>StandardScaler</code> in scikit-learn – Modul 2). L1 und L2 tauchen außerdem als Regularisierung wieder auf (Lasso und Ridge, Modul 3).
+  </div>
+
+  <h2>Matrizen</h2>
+  <h3>Matrix mal Vektor</h3>
+  <p>Eine Matrix \(A \in \mathbb{R}^{m \times d}\) mal ein Vektor \(x \in \mathbb{R}^d\) ergibt einen Vektor in \(\mathbb{R}^m\).
+    Jeder Eintrag des Ergebnisses ist das Skalarprodukt einer <b>Zeile</b> von \(A\) mit \(x\):</p>
+  \[ \begin{pmatrix} 1 & 2 \\ 3 & 4 \\ 5 & 6 \end{pmatrix} \begin{pmatrix} 10 \\ 1 \end{pmatrix} = \begin{pmatrix} 1\cdot 10 + 2 \cdot 1 \\ 3 \cdot 10 + 4 \cdot 1 \\ 5\cdot 10 + 6 \cdot 1 \end{pmatrix} = \begin{pmatrix} 12 \\ 34 \\ 56 \end{pmatrix} \]
+  <p>Und das ist der Grund, warum Matrizen im ML so praktisch sind: Ist \(X\) die Datenmatrix und \(w\) der Gewichtsvektor eines linearen Modells,
+    dann berechnet <b>eine einzige</b> Matrix-Vektor-Multiplikation die Vorhersagen für alle Datenpunkte gleichzeitig:</p>
+  \[ \hat y = X w + b \qquad (\hat y \in \mathbb{R}^n) \]
+
+  <h3>Matrizen als Abbildungen</h3>
+  <p>Man kann eine Matrix auch als Funktion sehen, die den Raum verformt: dreht, streckt, schert oder spiegelt.
+    Die Spalten der Matrix sagen, wohin die Einheitsvektoren \(\hat\imath = (1, 0)\) und \(\hat\jmath = (0, 1)\) wandern.
+    Die <b>Determinante</b> gibt an, um welchen Faktor sich Flächen ändern; ist sie 0, wird der Raum auf eine Linie „plattgedrückt“ und die Matrix ist nicht invertierbar.</p>
+  <div data-anim="matrix-transformation"></div>
+  <p>Diese Sichtweise brauchst du später bei der <b>Hauptkomponentenanalyse</b> (PCA, Modul 7) und bei neuronalen Netzen: Jede Schicht ist eine solche
+    lineare Abbildung, gefolgt von einer nichtlinearen Funktion.</p>
+
+  <h3>Matrix mal Matrix, Transponieren, Inverse</h3>
+  <ul>
+    <li><b>Matrixprodukt:</b> \((AB)_{ij}\) ist das Skalarprodukt der \(i\)-ten Zeile von \(A\) mit der \(j\)-ten Spalte von \(B\).
+      Dafür muss die Spaltenzahl von \(A\) der Zeilenzahl von \(B\) entsprechen: \((m \times k)(k \times n) = (m \times n)\).
+      Achtung: Im Allgemeinen ist \(AB \neq BA\).</li>
+    <li><b>Transponierte</b> \(A^\top\): Zeilen werden zu Spalten. \(X^\top X\) ist eine \(d \times d\)-Matrix, die in der linearen Regression auftaucht.</li>
+    <li><b>Inverse</b> \(A^{-1}\): macht eine Abbildung rückgängig, \(A^{-1} A = I\). Existiert nur für quadratische Matrizen mit \(\det A \neq 0\).</li>
+  </ul>
+  <div class="callout math">
+    <span class="label">Ausblick: die Normalengleichung</span>
+    Für die lineare Regression gibt es eine geschlossene Lösung: \(w^* = (X^\top X)^{-1} X^\top y\). Sie nutzt genau die Operationen dieser Lektion.
+    In der Praxis wird sie selten wörtlich so berechnet (numerisch instabil, teuer bei vielen Features) – eine Alternative ist der Gradientenabstieg aus Lektion 5.
+  </div>
+
+  <h2>In NumPy: vektorisiert denken</h2>
+<pre><code>import numpy as np
+
+X = np.array([[54, 2], [78, 3], [120, 5]])   # 3 Wohnungen, 2 Features → shape (3, 2)
+w = np.array([3.0, 10.0])                    # Gewichte
+b = 20.0
+
+y_hat = X @ w + b          # Matrix-Vektor-Produkt: alle Vorhersagen auf einmal
+a, c = X[0], X[1]
+a @ c                      # Skalarprodukt  (auch: np.dot(a, c))
+np.linalg.norm(a - c)      # euklidische Distanz
+X.T @ X                    # (2, 3) @ (3, 2) → (2, 2)
+</code></pre>
+  <p>Schleifen über Datenpunkte (<code>for i in range(n)</code>) sind in Python langsam. NumPy-Operationen laufen in optimiertem C-Code
+    und sind oft 100× schneller. <b>Vektorisieren</b> heißt: Formuliere die Rechnung mit ganzen Vektoren und Matrizen statt mit Schleifen.</p>
+  <div class="callout">
+    <span class="label">Broadcasting</span>
+    In <code>X @ w + b</code> ist <code>X @ w</code> ein Vektor mit 3 Einträgen, <code>b</code> eine einzelne Zahl. NumPy „verteilt“ <code>b</code> automatisch auf alle Einträge.
+    Ebenso funktioniert <code>X - X.mean(axis=0)</code>: Von jeder Zeile wird der Spalten-Mittelwertvektor abgezogen.
+  </div>
+
+  <div class="card notebook-link">
+    <div>💻 <b>Notebook zur Lektion:</b> <code>notebooks/modul-01/02_vektoren_matrizen.ipynb</code><br>
+      <span style="color:var(--text-2)">Skalarprodukt, Distanzen und Matrixmultiplikation in NumPy – erst mit Schleifen, dann vektorisiert, mit Geschwindigkeitsvergleich.</span></div>
+  </div>
+
+  <div data-quiz="m01-l02-quiz"><script type="application/json">
+  [
+    {"q": "Was ist \\((1, 2, 3) \\cdot (4, -1, 2)\\)?",
+     "options": ["8", "\\((4, -2, 6)\\)", "9", "0"],
+     "answer": 0, "explain": "\\(1\\cdot 4 + 2 \\cdot (-1) + 3 \\cdot 2 = 4 - 2 + 6 = 8\\). Das Ergebnis eines Skalarprodukts ist immer eine einzelne Zahl."},
+    {"q": "Das Skalarprodukt zweier Vektoren (beide nicht null) ist 0. Was bedeutet das geometrisch?",
+     "options": ["Sie sind gleich lang", "Sie stehen senkrecht aufeinander", "Sie zeigen in dieselbe Richtung", "Einer der Vektoren ist ungültig"],
+     "answer": 1, "explain": "Wegen \\(a\\cdot b = \\lVert a\\rVert \\lVert b\\rVert \\cos\\theta\\) muss \\(\\cos\\theta = 0\\) gelten, also \\(\\theta = 90°\\)."},
+    {"q": "\\(X\\) hat die Form \\((500, 8)\\). Welche Form muss \\(w\\) haben, damit \\(Xw\\) eine Vorhersage pro Datenpunkt ergibt?",
+     "options": ["\\((500,)\\)", "\\((8,)\\)", "\\((500, 8)\\)", "\\((8, 500)\\)"],
+     "answer": 1, "explain": "\\((500 \\times 8)(8) = (500)\\): ein Gewicht pro Feature, eine Vorhersage pro Datenpunkt."},
+    {"q": "Warum sollte man Features für kNN skalieren?",
+     "options": ["Damit der Code schneller läuft", "Weil Features mit großen Zahlenwerten sonst die Distanz dominieren", "Weil kNN nur Werte zwischen 0 und 1 akzeptiert", "Skalierung ist bei kNN unnötig"],
+     "answer": 1, "explain": "Distanzen summieren Differenzen über alle Features. Ein Feature in Tausendern überdeckt sonst eines im Bereich 0–5 vollständig."},
+    {"q": "Welche Determinante hat die Matrix \\(\\begin{pmatrix} 1 & 2 \\\\ 2 & 4 \\end{pmatrix}\\), und was folgt daraus?",
+     "options": ["8 – sie verachtfacht Flächen", "0 – sie drückt die Ebene auf eine Linie und ist nicht invertierbar", "−2 – sie spiegelt", "1 – sie ist eine Drehung"],
+     "answer": 1, "explain": "\\(1\\cdot 4 - 2\\cdot 2 = 0\\). Die zweite Spalte ist das Doppelte der ersten, beide Einheitsvektoren landen auf derselben Geraden."},
+    {"q": "Was berechnet <code>np.linalg.norm(a - b)</code>?",
+     "options": ["Das Skalarprodukt von a und b", "Die euklidische Distanz zwischen a und b", "Den Winkel zwischen a und b", "Die Manhattan-Distanz"],
+     "answer": 1, "explain": "Die Norm (standardmäßig L2) des Differenzvektors ist die euklidische Distanz. Für L1 nutzt man <code>ord=1</code>."}
+  ]
+  </script></div>
+</main>
+<script src="../assets/vendor/katex/katex.min.js"></script>
+<script src="../assets/vendor/katex/auto-render.min.js"></script>
+<script src="../assets/js/course.js"></script>
+<script src="../assets/js/app.js"></script>
+<script src="../assets/js/anim/m01-l02.js"></script>
+</body>
+</html>

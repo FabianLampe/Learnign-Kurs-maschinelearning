@@ -1,0 +1,156 @@
+<!doctype html>
+<html lang="de">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>1.3 Statistik &amp; Wahrscheinlichkeit – ML-Kurs</title>
+  <link rel="stylesheet" href="../assets/vendor/katex/katex.min.css">
+  <link rel="stylesheet" href="../assets/css/style.css">
+</head>
+<body data-lesson="m01-l03" data-root="../">
+<main>
+  <h1>Statistik &amp; Wahrscheinlichkeit</h1>
+  <p class="lead">Daten sind verrauscht, Vorhersagen unsicher. Statistik gibt uns Werkzeuge, um Daten zu beschreiben, und Wahrscheinlichkeitsrechnung die Sprache,
+    um über Unsicherheit zu reden. Beides steckt in jedem Modell – von Naive Bayes bis zum Sprachmodell, das das wahrscheinlichste nächste Wort wählt.</p>
+
+  <div class="goals">
+    <h3>Lernziele</h3>
+    <ul>
+      <li>Du kannst Mittelwert, Median, Varianz und Standardabweichung berechnen und deuten.</li>
+      <li>Du verstehst Verteilungen, insbesondere die Normalverteilung, und den Zentralen Grenzwertsatz.</li>
+      <li>Du rechnest mit bedingten Wahrscheinlichkeiten und dem Satz von Bayes.</li>
+      <li>Du kennst Korrelation, Kovarianz – und warum Korrelation keine Kausalität ist.</li>
+      <li>Du verstehst die Idee der Maximum-Likelihood-Schätzung.</li>
+    </ul>
+  </div>
+
+  <h2>Daten beschreiben: Lage und Streuung</h2>
+  <p>Für Werte \(x_1, \dots, x_n\) sind die wichtigsten Kennzahlen:</p>
+  \[ \bar x = \mu = \frac{1}{n}\sum_{i=1}^n x_i \qquad \sigma^2 = \frac{1}{n}\sum_{i=1}^n (x_i - \bar x)^2 \qquad \sigma = \sqrt{\sigma^2} \]
+  <ul>
+    <li><b>Mittelwert</b> \(\mu\) (<span class="term">mean</span>): der Schwerpunkt der Daten.</li>
+    <li><b>Median</b>: der mittlere Wert nach dem Sortieren – robust gegen Ausreißer.</li>
+    <li><b>Varianz</b> \(\sigma^2\): mittlere quadrierte Abweichung vom Mittelwert. Die <b>Standardabweichung</b> \(\sigma\) hat dieselbe Einheit wie die Daten.</li>
+  </ul>
+  <div data-anim="mittelwert-varianz"></div>
+  <div class="callout intuition">
+    <span class="label">Probier es aus</span>
+    Ziehe einen Punkt ganz nach rechts. Der Mittelwert wandert mit und die Streuung explodiert, während der Median kaum reagiert.
+    Genau deshalb ist die Wahl der Fehlerfunktion wichtig: Der mittlere <i>quadratische</i> Fehler (Lektion 5) reagiert stark auf Ausreißer,
+    der mittlere <i>absolute</i> Fehler viel weniger.
+  </div>
+  <p><b>Standardisieren:</b> Zieht man den Mittelwert ab und teilt durch die Standardabweichung, erhält man den <b>z-Score</b> \(z = \frac{x - \mu}{\sigma}\).
+    Die neuen Werte haben Mittelwert 0 und Standardabweichung 1. Das ist exakt, was <code>StandardScaler</code> in scikit-learn tut, und ein
+    \(|z| > 3\) ist eine einfache Regel zur Ausreißererkennung (Modul 8).</p>
+  <p class="callout warn" style="display:block"><span class="label">n oder n − 1?</span>
+    Schätzt man die Varianz einer ganzen Population aus einer Stichprobe, teilt man durch \(n-1\) statt \(n\) (Bessel-Korrektur), weil der Stichprobenmittelwert
+    selbst geschätzt ist. NumPy nutzt standardmäßig \(n\) (<code>np.var(x)</code>), pandas \(n-1\) (<code>df.var()</code>). Bei großen Datensätzen ist der Unterschied vernachlässigbar.</p>
+
+  <h2>Wahrscheinlichkeit</h2>
+  <p>Eine Wahrscheinlichkeit \(P(A) \in [0, 1]\) misst, wie sicher ein Ereignis \(A\) eintritt. Die wichtigsten Regeln:</p>
+  <ul>
+    <li><b>Gegenereignis:</b> \(P(\text{nicht } A) = 1 - P(A)\)</li>
+    <li><b>Bedingte Wahrscheinlichkeit:</b> \(P(A \mid B) = \frac{P(A \cap B)}{P(B)}\) – die Wahrscheinlichkeit von \(A\), wenn wir wissen, dass \(B\) eingetreten ist.</li>
+    <li><b>Unabhängigkeit:</b> \(A\) und \(B\) sind unabhängig, wenn \(P(A \cap B) = P(A)\,P(B)\), also \(P(A \mid B) = P(A)\).</li>
+  </ul>
+
+  <h3>Der Satz von Bayes</h3>
+  <p>Aus der Definition der bedingten Wahrscheinlichkeit folgt eine der wichtigsten Formeln der Statistik:</p>
+  \[ P(A \mid B) = \frac{P(B \mid A)\, P(A)}{P(B)} \]
+  <p>Lies sie so: Unsere Überzeugung über \(A\) <i>vor</i> den Daten (<b>Prior</b> \(P(A)\)) wird mit der <b>Likelihood</b> \(P(B \mid A)\) der Beobachtung
+    aktualisiert und ergibt die <b>Posterior</b> \(P(A \mid B)\). Das klassische Beispiel ist ein medizinischer Test:</p>
+  <div data-anim="bayes"></div>
+  <p>Bei einer seltenen Krankheit (1 %) und einem Test, der 95 % der Kranken erkennt (<b>Sensitivität</b>) und 95 % der Gesunden korrekt negativ testet (<b>Spezifität</b>),
+    ist man bei positivem Test nur zu etwa 16 % wirklich krank! Es gibt einfach viel mehr Gesunde, von denen 5 % falsch positiv sind.</p>
+  \[ P(\text{krank} \mid +) = \frac{0{,}95 \cdot 0{,}01}{0{,}95 \cdot 0{,}01 + 0{,}05 \cdot 0{,}99} \approx 0{,}16 \]
+  <div class="callout intuition">
+    <span class="label">Bezug zum ML</span>
+    Genau dieses Phänomen trifft dich bei <b>unbalancierten Daten</b>: Ein Betrugserkennungs-Modell mit 99 % Genauigkeit kann nutzlos sein, wenn nur 0,1 % der Transaktionen Betrug sind.
+    In Modul 2 lernst du dafür Precision und Recall – Precision ist genau die Größe \(P(\text{wirklich positiv} \mid \text{vorhergesagt positiv})\), die wir hier berechnet haben.
+    Der Klassifikator <b>Naive Bayes</b> (Modul 4) wendet den Satz von Bayes direkt an.
+  </div>
+
+  <h2>Zufallsvariablen und Verteilungen</h2>
+  <p>Eine <b>Zufallsvariable</b> \(X\) ordnet jedem Ausgang eines Zufallsexperiments eine Zahl zu. Ihre <b>Verteilung</b> beschreibt, welche Werte wie wahrscheinlich sind.</p>
+  <ul>
+    <li><b>Diskret</b> (endlich/abzählbar viele Werte): Würfel, Anzahl Klicks. Beschrieben durch \(P(X = k)\). Wichtige Beispiele: Bernoulli (Münzwurf), Binomial, Poisson.</li>
+    <li><b>Stetig</b> (kontinuierlich): Körpergröße, Messfehler. Beschrieben durch eine <b>Dichte</b> \(p(x)\); Wahrscheinlichkeiten sind Flächen unter der Dichte.</li>
+  </ul>
+  <p>Der <b>Erwartungswert</b> \(\mathbb{E}[X]\) ist der langfristige Durchschnitt, die Varianz \(\mathrm{Var}(X) = \mathbb{E}[(X - \mathbb{E}[X])^2]\) die erwartete quadrierte Abweichung.</p>
+
+  <h3>Die Normalverteilung</h3>
+  <p>Die bekannteste stetige Verteilung ist die <b>Normalverteilung</b> (Gauß-Verteilung) \(\mathcal{N}(\mu, \sigma^2)\):</p>
+  \[ p(x) = \frac{1}{\sigma\sqrt{2\pi}} \exp\!\left(-\frac{(x-\mu)^2}{2\sigma^2}\right) \]
+  <div data-anim="normalverteilung"></div>
+  <p>Faustregel (68-95-99,7): Etwa 68 % der Werte liegen innerhalb von \(\mu \pm \sigma\), 95 % innerhalb \(\mu \pm 2\sigma\), 99,7 % innerhalb \(\mu \pm 3\sigma\).</p>
+
+  <h3>Warum ist die Normalverteilung überall? Der Zentrale Grenzwertsatz</h3>
+  <p>Summiert oder mittelt man viele unabhängige Zufallsgrößen, ist das Ergebnis annähernd normalverteilt – egal, wie die einzelnen Größen verteilt sind.
+    Ein einzelner Würfel ist gleichverteilt, aber der Mittelwert aus 10 Würfeln sieht schon wie eine Glocke aus:</p>
+  <div data-anim="grenzwertsatz"></div>
+  <p>Achte auf die Breite: Die Standardabweichung des Mittelwerts schrumpft mit \(\sigma / \sqrt{n}\). Mehr Daten → genauere Schätzungen.
+    Weil Messfehler oft Summen vieler kleiner Einflüsse sind, nimmt man sie häufig als normalverteilt an. Daraus folgt (siehe unten), dass der mittlere quadratische Fehler die „natürliche“ Fehlerfunktion für Regression ist.</p>
+
+  <h2>Zusammenhänge: Kovarianz und Korrelation</h2>
+  <p>Die <b>Kovarianz</b> misst, ob zwei Größen gemeinsam steigen und fallen:</p>
+  \[ \mathrm{Cov}(X, Y) = \frac{1}{n}\sum_{i=1}^n (x_i - \bar x)(y_i - \bar y) \]
+  <p>Ihr Betrag hängt von den Einheiten ab. Normiert man mit den Standardabweichungen, erhält man den <b>Korrelationskoeffizienten</b> nach Pearson,
+    \(r = \frac{\mathrm{Cov}(X,Y)}{\sigma_X \sigma_Y} \in [-1, 1]\). Er misst nur <i>lineare</i> Zusammenhänge: Bei \(y = x^2\) auf symmetrischen Daten ist \(r \approx 0\), obwohl \(y\) vollständig von \(x\) abhängt.</p>
+  <p>Fasst man alle paarweisen Kovarianzen der Features zusammen, entsteht die <b>Kovarianzmatrix</b> \(\Sigma = \frac{1}{n} X_c^\top X_c\) (mit zentriertem \(X_c\)) –
+    die Grundlage der PCA in Modul 7.</p>
+  <div class="callout warn">
+    <span class="label">Korrelation ≠ Kausalität</span>
+    Eisverkäufe und Sonnenbrände korrelieren stark – nicht weil Eis Sonnenbrand verursacht, sondern weil beide vom Wetter abhängen (eine <b>Störvariable</b>).
+    ML-Modelle lernen Korrelationen. Für Vorhersagen reicht das oft, für Entscheidungen („Was passiert, wenn wir X ändern?“) nicht.
+  </div>
+
+  <h2>Maximum Likelihood: Wie Modelle aus Daten Parameter schätzen</h2>
+  <p>Angenommen, die Daten stammen aus einer Verteilung mit unbekanntem Parameter \(\theta\). Die <b>Likelihood</b> \(L(\theta) = \prod_i p(x_i \mid \theta)\)
+    sagt, wie wahrscheinlich die beobachteten Daten unter \(\theta\) sind. Die <b>Maximum-Likelihood-Schätzung</b> (MLE) wählt das \(\theta\), das die Daten am wahrscheinlichsten macht.
+    Weil Produkte vieler kleiner Zahlen unhandlich sind, maximiert man den Logarithmus (die <b>Log-Likelihood</b>) – bzw. minimiert die negative Log-Likelihood.</p>
+  <div class="callout math">
+    <span class="label">Zwei Ergebnisse, die du wiedersehen wirst</span>
+    <ul style="margin:.3rem 0">
+      <li>Nimmt man an, dass \(y = f(x) + \varepsilon\) mit normalverteiltem Rauschen \(\varepsilon \sim \mathcal{N}(0, \sigma^2)\), dann ist Maximum Likelihood
+        <b>dasselbe wie die Minimierung des mittleren quadratischen Fehlers</b> – denn \(-\log p(y \mid x) = \frac{(y - f(x))^2}{2\sigma^2} + \text{const}\).</li>
+      <li>Bei binären Labels (Bernoulli-Verteilung) wird die negative Log-Likelihood zur <b>Kreuzentropie</b> (<span class="term">Log Loss</span>),
+        der Verlustfunktion der logistischen Regression und der meisten neuronalen Klassifikatoren.</li>
+    </ul>
+  </div>
+  <p>Verlustfunktionen sind also nicht willkürlich, sondern folgen aus Annahmen über das Rauschen in den Daten. Wie man sie dann tatsächlich minimiert, zeigen die nächsten zwei Lektionen.</p>
+
+  <div class="card notebook-link">
+    <div>💻 <b>Notebook zur Lektion:</b> <code>notebooks/modul-01/03_statistik.ipynb</code><br>
+      <span style="color:var(--text-2)">Kennzahlen selbst implementieren, den Grenzwertsatz simulieren, Bayes am Spam-Beispiel, und eine Maximum-Likelihood-Schätzung numerisch finden.</span></div>
+  </div>
+
+  <div data-quiz="m01-l03-quiz"><script type="application/json">
+  [
+    {"q": "Die Gehälter in einer Firma: neun Personen verdienen 50 T€, die Chefin 1 Mio. €. Welche Kennzahl beschreibt das „typische“ Gehalt besser?",
+     "options": ["Der Mittelwert", "Der Median", "Die Varianz", "Beide gleich gut"],
+     "answer": 1, "explain": "Der Mittelwert liegt bei 145 T€ – niemand verdient das. Der Median (50 T€) ist robust gegen den Ausreißer."},
+    {"q": "Wie viel Prozent der Werte liegen bei einer Normalverteilung ungefähr innerhalb von \\(\\mu \\pm 2\\sigma\\)?",
+     "options": ["50 %", "68 %", "95 %", "99,7 %"],
+     "answer": 2, "explain": "Die 68-95-99,7-Regel: ±1σ ≈ 68 %, ±2σ ≈ 95 %, ±3σ ≈ 99,7 %."},
+    {"q": "Ein Test ist zu 99 % sensitiv und zu 99 % spezifisch, die Krankheit hat eine Häufigkeit von 0,1 %. Wie groß ist \\(P(\\text{krank} \\mid +)\\) ungefähr?",
+     "options": ["99 %", "50 %", "9 %", "0,1 %"],
+     "answer": 2, "explain": "Auf 100 000 Personen: 100 Kranke → 99 positiv. 99 900 Gesunde → 999 falsch positiv. \\(99 / (99 + 999) \\approx 9\\,\\%\\). Probiere es mit den Reglern in der Animation."},
+    {"q": "Was besagt der Zentrale Grenzwertsatz?",
+     "options": ["Alle Daten sind normalverteilt", "Mittelwerte vieler unabhängiger Zufallsgrößen sind annähernd normalverteilt", "Die Varianz wächst mit der Stichprobengröße", "Der Median ist immer gleich dem Mittelwert"],
+     "answer": 1, "explain": "Unabhängig von der Ausgangsverteilung (mit endlicher Varianz) nähern sich Mittelwerte einer Normalverteilung an, deren Breite mit \\(1/\\sqrt{n}\\) schrumpft."},
+    {"q": "Zwischen \\(x\\) und \\(y = x^2\\) (mit \\(x\\) symmetrisch um 0 verteilt) ist der Pearson-Korrelationskoeffizient …",
+     "options": ["ungefähr 1", "ungefähr 0", "ungefähr −1", "nicht definiert"],
+     "answer": 1, "explain": "Pearson misst nur lineare Zusammenhänge. Der quadratische Zusammenhang ist perfekt, aber symmetrisch – die lineare Korrelation hebt sich auf."},
+    {"q": "Unter welcher Annahme ist die Minimierung des mittleren quadratischen Fehlers dasselbe wie Maximum Likelihood?",
+     "options": ["Die Features sind unabhängig", "Das Rauschen auf den Labels ist normalverteilt", "Die Labels sind binär", "Es gibt keine Ausreißer"],
+     "answer": 1, "explain": "Die negative Log-Dichte der Normalverteilung ist bis auf Konstanten \\((y - f(x))^2\\). Bei binären Labels erhält man stattdessen die Kreuzentropie."}
+  ]
+  </script></div>
+</main>
+<script src="../assets/vendor/katex/katex.min.js"></script>
+<script src="../assets/vendor/katex/auto-render.min.js"></script>
+<script src="../assets/js/course.js"></script>
+<script src="../assets/js/app.js"></script>
+<script src="../assets/js/anim/m01-l03.js"></script>
+</body>
+</html>

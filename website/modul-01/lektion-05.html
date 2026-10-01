@@ -1,0 +1,193 @@
+<!doctype html>
+<html lang="de">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>1.5 Verlustfunktionen &amp; Gradientenabstieg – ML-Kurs</title>
+  <link rel="stylesheet" href="../assets/vendor/katex/katex.min.css">
+  <link rel="stylesheet" href="../assets/css/style.css">
+</head>
+<body data-lesson="m01-l05" data-root="../">
+<main>
+  <h1>Verlustfunktionen &amp; Gradientenabstieg</h1>
+  <p class="lead">Jetzt kommt alles zusammen: Vektoren beschreiben Daten und Parameter, Statistik liefert die Fehlerfunktion, und Ableitungen zeigen den Weg bergab.
+    Der Gradientenabstieg ist der Algorithmus, mit dem praktisch jedes moderne Modell trainiert wird – von der logistischen Regression bis zu GPT.</p>
+
+  <div class="goals">
+    <h3>Lernziele</h3>
+    <ul>
+      <li>Du kennst die wichtigsten Verlustfunktionen (MSE, MAE, Kreuzentropie) und weißt, wann man welche nimmt.</li>
+      <li>Du verstehst den Gradientenabstieg und die Rolle der Lernrate.</li>
+      <li>Du kannst Batch-, Stochastischen und Mini-Batch-Gradientenabstieg unterscheiden.</li>
+      <li>Du kennst die typischen Probleme: lokale Minima, schlecht skalierte Features, Divergenz.</li>
+    </ul>
+  </div>
+
+  <h2>Training = Optimierung</h2>
+  <p>Ein Modell \(f_\theta\) hat Parameter \(\theta\) (bei der linearen Regression \(\theta = (w, b)\)). Eine <b>Verlustfunktion</b> \(L(\theta)\)
+    (<span class="term">loss function</span>, auch Kostenfunktion) misst, wie schlecht die Vorhersagen auf den Trainingsdaten sind. Training heißt:</p>
+  \[ \theta^* = \arg\min_\theta L(\theta) \]
+  <p>Also: Finde die Parameter mit dem kleinsten Verlust. Alles Weitere in dieser Lektion beantwortet zwei Fragen: <b>Was</b> minimieren wir? Und <b>wie</b>?</p>
+
+  <h2>Was minimieren wir? Verlustfunktionen</h2>
+  <h3>Für Regression</h3>
+  <p>Die Differenz \(y_i - \hat y_i\) zwischen wahrem Wert und Vorhersage heißt <b>Residuum</b>. Die beiden wichtigsten Verluste mitteln die Residuen auf unterschiedliche Weise:</p>
+  \[ \text{MSE} = \frac{1}{n}\sum_{i=1}^n (y_i - \hat y_i)^2 \qquad\qquad \text{MAE} = \frac{1}{n}\sum_{i=1}^n |y_i - \hat y_i| \]
+  <p>Beim <b>mittleren quadratischen Fehler</b> (<span class="term">Mean Squared Error</span>) ist der Name wörtlich zu nehmen – jedes Residuum spannt ein Quadrat auf,
+    und wir minimieren deren durchschnittliche Fläche. Versuche, die Gerade so hinzulegen, dass die Quadrate möglichst klein werden:</p>
+  <div data-anim="fehlerquadrate"></div>
+  <div class="table-wrap">
+  <table>
+    <tr><th></th><th>MSE</th><th>MAE</th></tr>
+    <tr><td>Ausreißer</td><td>werden stark bestraft (quadratisch)</td><td>werden nur linear bestraft – robuster</td></tr>
+    <tr><td>Ableitung</td><td>glatt: \(2(\hat y - y)\), wird klein nahe am Ziel</td><td>Knick bei 0, Betrag des Gradienten immer gleich</td></tr>
+    <tr><td>Statistische Bedeutung</td><td>optimal bei normalverteiltem Rauschen, schätzt den <b>Mittelwert</b></td><td>schätzt den <b>Median</b></td></tr>
+  </table>
+  </div>
+  <p>Eine Mischung aus beiden ist der <b>Huber-Loss</b>: quadratisch für kleine, linear für große Residuen. In scikit-learn findest du ihn z.&nbsp;B. in <code>HuberRegressor</code>
+    und als <code>loss="huber"</code> beim Gradient Boosting (Modul 6).</p>
+
+  <h3>Für Klassifikation</h3>
+  <p>Gibt ein Modell eine Wahrscheinlichkeit \(p = P(y = 1 \mid x)\) aus, misst man den Fehler mit der <b>binären Kreuzentropie</b> (<span class="term">Log Loss</span>):</p>
+  \[ L = -\frac{1}{n}\sum_{i=1}^n \Big[ y_i \log p_i + (1 - y_i)\log(1 - p_i) \Big] \]
+  <p>Ist das Label 1, zählt nur \(-\log p_i\): Bei \(p_i = 0{,}99\) fast kein Verlust, bei \(p_i = 0{,}01\) ein riesiger. Ein Modell, das sich sicher ist <i>und</i> falsch liegt, wird hart bestraft.
+    Wie in Lektion 3 gezeigt, folgt die Kreuzentropie aus Maximum Likelihood – ebenso wie MSE. Sie ist die Verlustfunktion der logistischen Regression (Modul 3) und neuronaler Klassifikatoren.</p>
+  <div class="callout warn">
+    <span class="label">Verlust ≠ Metrik</span>
+    Die Verlustfunktion muss sich gut <i>optimieren</i> lassen (glatt, differenzierbar). Die <b>Metrik</b>, mit der du das Modell am Ende bewertest, darf etwas ganz anderes sein –
+    z.&nbsp;B. Accuracy oder F1. Accuracy kann man nicht direkt mit Gradienten optimieren, weil sie stückweise konstant ist (Ableitung fast überall 0).
+  </div>
+
+  <h2>Wie minimieren wir? Gradientenabstieg</h2>
+  <p>Stell dir vor, du stehst nachts im Nebel auf einem Berg und willst ins Tal. Du siehst nichts, spürst aber die Neigung unter deinen Füßen.
+    Die naheliegende Strategie: Mach einen Schritt in die Richtung, in die es am steilsten bergab geht, und wiederhole das. Das ist der <b>Gradientenabstieg</b>
+    (<span class="term">Gradient Descent</span>):</p>
+  \[ \theta_{\text{neu}} = \theta - \eta \, \nabla_\theta L(\theta) \]
+  <p>\(\eta\) („eta“) ist die <b>Lernrate</b> (<span class="term">learning rate</span>): Sie bestimmt die Schrittgröße. Der Algorithmus komplett:</p>
+<pre><code>θ = Startwert (zufällig oder 0)
+wiederhole, bis der Verlust sich kaum noch ändert:
+    g = Gradient von L an der Stelle θ
+    θ = θ - η · g
+</code></pre>
+  <div data-anim="gd-1d"></div>
+
+  <figure class="video">
+    <video controls preload="metadata" src="../assets/videos/m01_v04_gradientenabstieg.mp4"></video>
+    <figcaption>Erklärvideo: Gradientenabstieg und der Einfluss der Lernrate</figcaption>
+  </figure>
+
+  <h3>Die Lernrate</h3>
+  <p>Probiere in der Animation oben mit der Parabel \(f(x) = \tfrac12 x^2\) aus, was passiert:</p>
+  <ul>
+    <li><b>Zu klein</b> (\(\eta = 0{,}05\)): Es geht sicher bergab, braucht aber sehr viele Schritte.</li>
+    <li><b>Gut</b> (\(\eta \approx 0{,}3 \ldots 1\)): schnelle Konvergenz. Bei \(\eta = 1\) landet man hier sogar in einem Schritt im Minimum.</li>
+    <li><b>Zu groß</b> (\(1 < \eta < 2\)): Man springt über das Minimum hinweg und pendelt hin und her.</li>
+    <li><b>Viel zu groß</b> (\(\eta > 2\)): Jeder Schritt landet höher als der vorherige – das Verfahren <b>divergiert</b>.</li>
+  </ul>
+  <div class="callout math">
+    <span class="label">Warum genau 2?</span>
+    Für \(f(x) = \tfrac12 x^2\) ist \(f'(x) = x\), also \(x_{\text{neu}} = x - \eta x = (1 - \eta)\,x\). Jeder Schritt multipliziert \(x\) mit \(1 - \eta\).
+    Das schrumpft nur gegen 0, wenn \(|1 - \eta| < 1\), also \(0 < \eta < 2\). Bei einer steileren Parabel \(\tfrac{k}{2}x^2\) liegt die Grenze bei \(2/k\):
+    Je stärker die Krümmung, desto kleiner muss die Lernrate sein.
+  </div>
+  <p>Teste auch die Funktion mit zwei Tälern: Je nach Startpunkt landet der Gradientenabstieg in einem anderen <b>lokalen Minimum</b>. Er sieht nur die lokale Steigung,
+    nie das ganze Gebirge. Bei der linearen Regression ist der Verlust allerdings <b>konvex</b> (eine einzige Schüssel) – dort gibt es nur ein Minimum.</p>
+
+  <h3>In mehreren Dimensionen</h3>
+  <p>Mit zwei Parametern wird die Verlustfunktion zu einer Landschaft. Ist das Tal in eine Richtung viel steiler als in die andere, passiert etwas Typisches:</p>
+  <div data-anim="gd-2d"></div>
+  <p>Der Gradient zeigt senkrecht auf die Höhenlinien – und das ist in einem langgezogenen Tal <i>nicht</i> die Richtung zum Minimum. Der Pfad springt zwischen den
+    steilen Talwänden hin und her, während er in der flachen Richtung nur langsam vorankommt. Und die steilste Richtung begrenzt die maximale Lernrate.</p>
+  <div class="callout intuition">
+    <span class="label">Praxis-Konsequenz: Features skalieren!</span>
+    Langgezogene Täler entstehen vor allem, wenn Features sehr unterschiedliche Größenordnungen haben (Fläche in m² ≈ 100, Zimmer ≈ 3).
+    Werden alle Features standardisiert (Mittelwert 0, Standardabweichung 1), wird die Landschaft runder und der Gradientenabstieg viel schneller.
+    Moderne Optimierer wie <b>Momentum</b> und <b>Adam</b> (Modul 10) dämpfen das Zickzack zusätzlich, indem sie sich frühere Schritte merken.
+  </div>
+
+  <h2>Alles zusammen: lineare Regression mit Gradientenabstieg</h2>
+  <p>Für das Modell \(\hat y_i = w x_i + b\) und den MSE-Verlust ergeben sich mit der Kettenregel (Lektion 4) die Gradienten über alle \(n\) Beispiele:</p>
+  \[ \frac{\partial L}{\partial w} = \frac{2}{n}\sum_{i=1}^n (\hat y_i - y_i)\, x_i \qquad \frac{\partial L}{\partial b} = \frac{2}{n}\sum_{i=1}^n (\hat y_i - y_i) \]
+  <p>Beobachte, wie die Gerade links und der Punkt in der Verlustlandschaft rechts gemeinsam wandern. Jeder Punkt \((w, b)\) rechts entspricht genau einer Geraden links:</p>
+  <div data-anim="regression-live"></div>
+  <p>Vektorisiert mit NumPy sind das nur wenige Zeilen – und mit beliebig vielen Features (\(X\) als Matrix, \(w\) als Vektor) sieht der Code genauso aus:</p>
+<pre><code>import numpy as np
+
+def train(X, y, lr=0.03, epochs=2000):
+    n, d = X.shape
+    w, b = np.zeros(d), 0.0
+    for epoch in range(epochs):
+        y_hat = X @ w + b              # Vorhersagen für alle Beispiele
+        err = y_hat - y                # Residuen (mit umgekehrtem Vorzeichen)
+        grad_w = 2 / n * X.T @ err     # ∂L/∂w – ein Vektor mit d Einträgen
+        grad_b = 2 / n * err.sum()     # ∂L/∂b
+        w -= lr * grad_w
+        b -= lr * grad_b
+    return w, b
+</code></pre>
+  <figure class="video">
+    <video controls preload="metadata" src="../assets/videos/m01_v05_regression.mp4"></video>
+    <figcaption>Erklärvideo: Eine Gerade lernen – der komplette Trainingszyklus</figcaption>
+  </figure>
+
+  <h2>Batch, stochastisch, Mini-Batch</h2>
+  <p>Oben haben wir für jeden Schritt den Gradienten über <i>alle</i> Daten berechnet. Bei Millionen Datenpunkten ist das teuer. Die Varianten:</p>
+  <div class="table-wrap">
+  <table>
+    <tr><th>Variante</th><th>Gradient pro Schritt aus …</th><th>Eigenschaften</th></tr>
+    <tr><td><b>Batch-GD</b></td><td>allen \(n\) Beispielen</td><td>exakter Gradient, glatter Pfad, aber langsam pro Schritt</td></tr>
+    <tr><td><b>Stochastischer GD (SGD)</b></td><td>einem zufälligen Beispiel</td><td>sehr schnelle, aber verrauschte Schritte; das Rauschen hilft manchmal, flache Stellen zu verlassen</td></tr>
+    <tr><td><b>Mini-Batch-GD</b></td><td>einer kleinen zufälligen Gruppe (z.&nbsp;B. 32–512)</td><td>der Standard in der Praxis: guter Kompromiss, ideal für GPUs</td></tr>
+  </table>
+  </div>
+  <p>Ein Durchlauf durch alle Trainingsdaten heißt <b>Epoche</b>. Im Deep Learning sagt man meist „SGD“, meint aber Mini-Batch-GD.
+    In scikit-learn nutzen <code>SGDRegressor</code> und <code>SGDClassifier</code> stochastischen Gradientenabstieg; <code>LinearRegression</code> dagegen löst das Problem direkt
+    (per Kleinste-Quadrate-Verfahren), ganz ohne Lernrate.</p>
+
+  <h2>Wann ist man fertig?</h2>
+  <ul>
+    <li><b>Feste Anzahl Epochen</b> – einfach, aber man muss eine gute Zahl kennen.</li>
+    <li><b>Konvergenzkriterium</b>: Abbruch, wenn sich der Verlust kaum noch ändert (<code>tol</code> in scikit-learn) oder der Gradient sehr klein ist.</li>
+    <li><b>Early Stopping</b>: Abbruch, wenn der Fehler auf separaten <i>Validierungsdaten</i> wieder steigt – ein wirksamer Schutz gegen Overfitting (Modul 2 und 10).</li>
+  </ul>
+  <p>Zeichne immer die <b>Lernkurve</b> (Verlust über Epochen). Fällt sie nicht, ist die Lernrate zu klein oder es gibt einen Bug; springt sie oder steigt sie,
+    ist die Lernrate zu groß. Das übst du im Mini-Projekt.</p>
+
+  <div class="card notebook-link">
+    <div>💻 <b>Notebook zur Lektion:</b> <code>notebooks/modul-01/05_gradientenabstieg.ipynb</code><br>
+      <span style="color:var(--text-2)">Verlustfunktionen implementieren, Gradientenabstieg in 1D und 2D, Lernraten-Experimente und SGD vs. Batch-GD im Vergleich.</span></div>
+  </div>
+
+  <div data-quiz="m01-l05-quiz"><script type="application/json">
+  [
+    {"q": "Residuen eines Modells: 1, −1, 2, −2, 10. Welche Aussage stimmt?",
+     "options": ["MSE und MAE werden gleich stark vom Wert 10 beeinflusst", "Der MSE wird vom Residuum 10 viel stärker dominiert als der MAE", "Der MAE ist hier größer als der MSE", "Residuen können nicht negativ sein"],
+     "answer": 1, "explain": "MAE = 16/5 = 3,2. MSE = (1+1+4+4+100)/5 = 22. Allein das Residuum 10 trägt 100 von 110 zur Quadratsumme bei."},
+    {"q": "Der Gradient des Verlusts nach einem Parameter ist \\(+3\\), die Lernrate \\(0{,}1\\). Wie ändert sich der Parameter?",
+     "options": ["um +0,3", "um −0,3", "um −3", "um +3,1"],
+     "answer": 1, "explain": "\\(\\theta_\\text{neu} = \\theta - \\eta g = \\theta - 0{,}1 \\cdot 3\\). Wir gehen gegen den Gradienten."},
+    {"q": "Die Lernkurve springt wild auf und ab und wird insgesamt größer. Was ist die wahrscheinlichste Ursache?",
+     "options": ["Die Lernrate ist zu klein", "Die Lernrate ist zu groß", "Zu wenige Epochen", "Die Daten sind zu gut"],
+     "answer": 1, "explain": "Bei zu großer Lernrate schießen die Schritte über das Minimum hinaus und landen jedes Mal höher – das Verfahren divergiert."},
+    {"q": "Was ist der Hauptvorteil von Mini-Batch-Gradientenabstieg gegenüber Batch-Gradientenabstieg bei großen Datensätzen?",
+     "options": ["Er findet immer das globale Minimum", "Viele günstige Schritte statt weniger teurer – schnellerer Fortschritt pro Rechenzeit", "Er braucht keine Lernrate", "Der Gradient ist exakt"],
+     "answer": 1, "explain": "Ein Mini-Batch liefert eine gute Schätzung des Gradienten zu einem Bruchteil der Kosten. Exakt ist er nicht – das Rauschen ist der Preis."},
+    {"q": "Warum hilft Feature-Skalierung dem Gradientenabstieg?",
+     "options": ["Sie verkleinert den Datensatz", "Sie macht die Verlustlandschaft runder, sodass der Gradient eher zum Minimum zeigt und größere Lernraten möglich sind", "Sie entfernt Ausreißer", "Sie macht die Verlustfunktion konvex"],
+     "answer": 1, "explain": "Unterschiedliche Größenordnungen erzeugen langgezogene Täler mit Zickzack-Pfaden. Gleich skalierte Features ergeben rundere Höhenlinien."},
+    {"q": "Warum trainiert man einen Klassifikator mit Kreuzentropie und nicht direkt mit Accuracy?",
+     "options": ["Accuracy ist schwer zu berechnen", "Accuracy ist stückweise konstant – ihr Gradient ist fast überall 0", "Kreuzentropie ist immer kleiner", "Accuracy funktioniert nur bei Regression"],
+     "answer": 1, "explain": "Eine kleine Parameteränderung ändert meist keine einzige Vorhersage, die Accuracy bleibt gleich. Ohne Gradient kein Gradientenabstieg. Die Kreuzentropie ist glatt und differenzierbar."},
+    {"q": "Bei \\(f(x) = 2x^2\\) (also \\(f'(x) = 4x\\)): Ab welcher Lernrate divergiert der Gradientenabstieg?",
+     "options": ["\\(\\eta > 2\\)", "\\(\\eta > 1\\)", "\\(\\eta > 0{,}5\\)", "\\(\\eta > 0{,}25\\)"],
+     "answer": 2, "explain": "\\(x_\\text{neu} = x - 4\\eta x = (1 - 4\\eta)x\\). Konvergenz erfordert \\(|1 - 4\\eta| < 1\\), also \\(\\eta < 0{,}5\\)."}
+  ]
+  </script></div>
+</main>
+<script src="../assets/vendor/katex/katex.min.js"></script>
+<script src="../assets/vendor/katex/auto-render.min.js"></script>
+<script src="../assets/js/course.js"></script>
+<script src="../assets/js/app.js"></script>
+<script src="../assets/js/anim/m01-l05.js"></script>
+</body>
+</html>

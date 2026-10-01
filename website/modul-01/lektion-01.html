@@ -1,0 +1,174 @@
+<!doctype html>
+<html lang="de">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>1.1 Was ist Machine Learning? – ML-Kurs</title>
+  <link rel="stylesheet" href="../assets/vendor/katex/katex.min.css">
+  <link rel="stylesheet" href="../assets/css/style.css">
+</head>
+<body data-lesson="m01-l01" data-root="../">
+<main>
+  <h1>Was ist Machine Learning?</h1>
+  <p class="lead">Bevor wir rechnen: Was heißt es überhaupt, dass ein Computer „lernt“? In dieser Lektion baust du das Grundvokabular auf,
+    das in jeder weiteren Lektion vorkommt.</p>
+
+  <div class="goals">
+    <h3>Lernziele</h3>
+    <ul>
+      <li>Du kannst erklären, wie sich Machine Learning vom klassischen Programmieren unterscheidet.</li>
+      <li>Du kennst die Begriffe Feature, Label, Modell, Parameter, Hyperparameter, Training und Inferenz.</li>
+      <li>Du unterscheidest überwachtes, unüberwachtes und bestärkendes Lernen sowie Klassifikation und Regression.</li>
+      <li>Du kennst die Schritte eines typischen ML-Projekts.</li>
+    </ul>
+  </div>
+
+  <figure class="video">
+    <video controls preload="metadata" src="../assets/videos/m01_v01_was_ist_ml.mp4"></video>
+    <figcaption>Erklärvideo: Regeln programmieren vs. Regeln lernen (ca. 1 Min.)</figcaption>
+  </figure>
+
+  <h2>Regeln schreiben oder Regeln lernen?</h2>
+  <p>Ein klassisches Programm ist eine Liste von Regeln, die ein Mensch aufgeschrieben hat. Das klappt hervorragend, solange wir die Regeln kennen:
+    Steuern berechnen, eine Datei sortieren, einen Warenkorb summieren.</p>
+  <p>Für viele interessante Probleme kennen wir die Regeln aber nicht. Niemand kann aufschreiben, welche Pixelmuster eine Katze ausmachen,
+    oder welche Kombination aus 200 Kundenmerkmalen eine Kündigung ankündigt. Machine Learning dreht den Spieß um:</p>
+
+  <div data-anim="regel-vs-ml"></div>
+
+  <div class="callout">
+    <span class="label">Definition</span>
+    <b>Machine Learning</b> ist das Gebiet, in dem Computer aus <b>Daten</b> lernen, eine Aufgabe zu lösen, statt explizit dafür programmiert zu werden.
+    Etwas formaler (Tom Mitchell, 1997): Ein Programm <i>lernt</i> aus Erfahrung \(E\) bezüglich einer Aufgabe \(T\) und eines Leistungsmaßes \(P\),
+    wenn seine an \(P\) gemessene Leistung bei \(T\) mit der Erfahrung \(E\) steigt.
+  </div>
+  <p>Beim Spam-Filter ist \(T\) „E-Mails als Spam oder Nicht-Spam einordnen“, \(E\) sind tausende E-Mails, die Menschen bereits markiert haben,
+    und \(P\) ist zum Beispiel der Anteil korrekt eingeordneter Mails.</p>
+
+  <h2>Das Grundvokabular</h2>
+  <p>Stell dir eine Tabelle mit Wohnungen vor. Jede Zeile ist ein Beispiel, jede Spalte eine Eigenschaft:</p>
+  <div class="table-wrap">
+  <table>
+    <tr><th>Wohnfläche (m²)</th><th>Zimmer</th><th>Baujahr</th><th>Stadtteil</th><th style="color:var(--series-2)">Preis (T€)</th></tr>
+    <tr><td>54</td><td>2</td><td>1985</td><td>Nord</td><td>210</td></tr>
+    <tr><td>78</td><td>3</td><td>2010</td><td>Mitte</td><td>395</td></tr>
+    <tr><td>120</td><td>5</td><td>1962</td><td>Süd</td><td>480</td></tr>
+    <tr><td>66</td><td>2</td><td>2021</td><td>Mitte</td><td>?</td></tr>
+  </table>
+  </div>
+  <div class="table-wrap">
+  <table>
+    <tr><th>Begriff</th><th>Bedeutung</th><th>Im Beispiel</th></tr>
+    <tr><td><b>Beispiel / Datenpunkt</b> <span class="term">(sample)</span></td><td>eine Zeile der Tabelle</td><td>eine Wohnung</td></tr>
+    <tr><td><b>Merkmal</b> <span class="term">(feature)</span>, \(x\)</td><td>eine Eingabegröße</td><td>Fläche, Zimmer, Baujahr, Stadtteil</td></tr>
+    <tr><td><b>Zielgröße / Label</b> <span class="term">(target)</span>, \(y\)</td><td>was vorhergesagt werden soll</td><td>Preis</td></tr>
+    <tr><td><b>Modell</b>, \(f\)</td><td>eine Funktion \(\hat y = f(x)\), die aus Features eine Vorhersage macht</td><td>„Preis ≈ 3,1 · Fläche + …“</td></tr>
+    <tr><td><b>Parameter</b></td><td>Zahlen <i>im</i> Modell, die beim Training gelernt werden</td><td>der Faktor 3,1</td></tr>
+    <tr><td><b>Hyperparameter</b></td><td>Einstellungen, die <i>du</i> vor dem Training wählst</td><td>Lernrate, Baumtiefe, k bei kNN</td></tr>
+    <tr><td><b>Training</b> <span class="term">(fit)</span></td><td>Parameter so anpassen, dass das Modell die Daten gut erklärt</td><td>aus den bekannten Preisen lernen</td></tr>
+    <tr><td><b>Inferenz</b> <span class="term">(predict)</span></td><td>das fertige Modell auf neue Daten anwenden</td><td>Preis der letzten Wohnung schätzen</td></tr>
+  </table>
+  </div>
+  <p>Das Dach über \(\hat y\) („y-Dach“) bedeutet immer: <i>geschätzt / vorhergesagt</i>. \(y\) ist der wahre Wert, \(\hat y\) die Vorhersage des Modells.
+    Den ganzen Datensatz schreibt man als Matrix \(X\) (eine Zeile pro Beispiel, eine Spalte pro Feature) und die Labels als Vektor \(y\).
+    Genau diese Schreibweise benutzt auch scikit-learn: <code>model.fit(X, y)</code>, <code>model.predict(X_neu)</code>.</p>
+
+  <h2>Lernen aus Beispielen – zum Ausprobieren</h2>
+  <p>Hier siehst du ein echtes, wenn auch sehr einfaches Lernverfahren: <b>k-Nächste-Nachbarn</b>. Für jeden Ort im Feld schaut es nach,
+    welche Klasse die \(k\) nächstgelegenen Trainingspunkte haben, und übernimmt die Mehrheit. Füge Punkte hinzu und beobachte, wie sich die
+    Entscheidungsgrenze verändert. Setze auch einen „falschen“ Punkt mitten in die andere Klasse und vergleiche \(k=1\) mit \(k=7\).</p>
+  <div data-anim="lern-spielplatz"></div>
+  <div class="callout intuition">
+    <span class="label">Beobachtung</span>
+    Bei \(k = 1\) folgt das Modell jedem einzelnen Punkt, auch einem Ausreißer – es <b>überanpasst</b> (<span class="term">Overfitting</span>).
+    Bei großem \(k\) wird die Grenze glatter, kann aber feine Strukturen übersehen (<span class="term">Underfitting</span>).
+    \(k\) ist ein <b>Hyperparameter</b>: Das Verfahren lernt ihn nicht selbst, du musst ihn wählen. Diesem Spannungsfeld begegnen wir im ganzen Kurs wieder.
+  </div>
+
+  <h2>Die drei großen Lernarten</h2>
+  <div data-anim="lernarten"></div>
+  <div class="table-wrap">
+  <table>
+    <tr><th>Lernart</th><th>Daten</th><th>Ziel</th><th>Beispiele (im Kurs)</th></tr>
+    <tr><td><b>Überwacht</b></td><td>Features + Labels</td><td>Abbildung \(x \mapsto y\) lernen</td><td>Regression, Logistische Regression, Bäume, Gradient Boosting, SVM, neuronale Netze</td></tr>
+    <tr><td><b>Unüberwacht</b></td><td>nur Features</td><td>Struktur finden</td><td>k-Means, DBSCAN, PCA, Isolation Forest</td></tr>
+    <tr><td><b>Bestärkend</b></td><td>Belohnungssignal durch Interaktion</td><td>Strategie (Policy) lernen</td><td>Q-Learning, Policy Gradients</td></tr>
+  </table>
+  </div>
+  <p>Dazwischen gibt es Mischformen: <b>Semi-überwachtes Lernen</b> (wenige Labels, viele ungelabelte Daten) und <b>selbstüberwachtes Lernen</b>
+    (<span class="term">self-supervised</span>), bei dem die Labels aus den Daten selbst erzeugt werden – so werden große Sprachmodelle vortrainiert:
+    Sie lernen, das jeweils nächste Wort eines Textes vorherzusagen.</p>
+
+  <h3>Klassifikation vs. Regression</h3>
+  <p>Innerhalb des überwachten Lernens unterscheidet man nach der Art des Labels:</p>
+  <ul>
+    <li><b>Regression:</b> \(y\) ist eine Zahl auf einer kontinuierlichen Skala – Preis, Temperatur, Nachfrage.</li>
+    <li><b>Klassifikation:</b> \(y\) ist eine Kategorie – Spam/kein Spam (binär), Ziffer 0–9 (mehrere Klassen).</li>
+  </ul>
+  <div class="callout warn">
+    <span class="label">Typische Falle</span>
+    Eine Zahl als Label heißt nicht automatisch Regression. Postleitzahlen oder Produkt-IDs sind Zahlen, aber Kategorien – es gibt kein sinnvolles „Dazwischen“.
+    Umgekehrt wird ein Wert mit klarer Ordnung (Schulnote 1–6) manchmal sinnvoll als Regression behandelt.
+  </div>
+
+  <h2>Wie ein ML-Projekt abläuft</h2>
+  <ol>
+    <li><b>Problem formulieren:</b> Was genau soll vorhergesagt werden, und woran misst man Erfolg? Gibt es eine einfache Basislösung (<span class="term">Baseline</span>)?</li>
+    <li><b>Daten sammeln und verstehen:</b> Explorative Analyse, Verteilungen, fehlende Werte, Ausreißer.</li>
+    <li><b>Daten vorbereiten:</b> Bereinigen, Features bauen, kategoriale Werte kodieren, skalieren.</li>
+    <li><b>Daten aufteilen:</b> Trainings-, Validierungs- und Testdaten – der Test-Satz bleibt bis zum Schluss unangetastet.</li>
+    <li><b>Modelle trainieren und vergleichen:</b> mit Kreuzvalidierung und Hyperparameter-Suche.</li>
+    <li><b>Evaluieren:</b> einmalig auf dem Test-Satz, Fehleranalyse.</li>
+    <li><b>Ausliefern und überwachen:</b> Das Modell läuft in der echten Welt; Daten verändern sich (<span class="term">Data Drift</span>).</li>
+  </ol>
+  <p>Die Schritte 2–6 übst du ab Modul 2 ausführlich mit scikit-learn. Die wichtigste Regel vorweg: <b>Ein Modell wird immer an Daten bewertet,
+    die es beim Training nicht gesehen hat.</b> Sonst misst du nur, wie gut es auswendig gelernt hat.</p>
+
+  <h2>Werkzeuge in diesem Kurs</h2>
+  <div class="table-wrap">
+  <table>
+    <tr><th>Bibliothek</th><th>Wofür</th></tr>
+    <tr><td><code>numpy</code></td><td>Rechnen mit Vektoren und Matrizen – die Basis von allem</td></tr>
+    <tr><td><code>pandas</code></td><td>Tabellen laden, säubern, untersuchen</td></tr>
+    <tr><td><code>matplotlib</code></td><td>Diagramme</td></tr>
+    <tr><td><code>scikit-learn</code></td><td>Klassisches ML: fast jedes Modell mit derselben <code>fit</code>/<code>predict</code>-Schnittstelle</td></tr>
+    <tr><td><code>PyTorch</code></td><td>Neuronale Netze und Deep Learning (ab Modul 9)</td></tr>
+  </table>
+  </div>
+  <p>In Modul 1 implementieren wir vieles bewusst selbst mit NumPy. Wenn du später <code>LinearRegression().fit(X, y)</code> aufrufst, weißt du dann genau, was darin passiert.</p>
+
+  <div class="card notebook-link">
+    <div>💻 <b>Notebook zur Lektion:</b> <code>notebooks/modul-01/01_was_ist_ml.ipynb</code><br>
+      <span style="color:var(--text-2)">Du trainierst dein erstes scikit-learn-Modell und implementierst k-Nächste-Nachbarn selbst. Lösung in <code>loesungen/</code>.</span></div>
+  </div>
+
+  <div data-quiz="m01-l01-quiz"><script type="application/json">
+  [
+    {"q": "Was ist der Kernunterschied zwischen klassischem Programmieren und Machine Learning?",
+     "options": ["ML-Programme laufen schneller", "Beim ML werden die Regeln aus Daten und Beispiel-Antworten gelernt statt von Hand geschrieben", "ML braucht keine Daten", "Klassische Programme können keine Zahlen verarbeiten"],
+     "answer": 1, "explain": "Klassisch: Daten + Regeln → Antworten. ML: Daten + Antworten → Regeln (das Modell)."},
+    {"q": "Ein Modell soll den Stromverbrauch eines Haushalts in kWh für den nächsten Monat vorhersagen. Welche Aufgabe ist das?",
+     "options": ["Klassifikation", "Regression", "Clustering", "Bestärkendes Lernen"],
+     "answer": 1, "explain": "Die Zielgröße ist eine kontinuierliche Zahl – also Regression."},
+    {"q": "Du möchtest Kunden in Gruppen mit ähnlichem Kaufverhalten einteilen, hast aber keine vorgegebenen Gruppen. Welche Lernart passt?",
+     "options": ["Überwachtes Lernen", "Unüberwachtes Lernen", "Bestärkendes Lernen", "Regression"],
+     "answer": 1, "explain": "Ohne Labels sucht man Struktur in den Daten – typisch Clustering, also unüberwachtes Lernen."},
+    {"q": "Welche Größe ist ein Hyperparameter?",
+     "options": ["Das Gewicht \\(w\\) einer linearen Regression", "Die Anzahl der Nachbarn \\(k\\) bei kNN", "Die Vorhersage \\(\\hat y\\)", "Das Label \\(y\\)"],
+     "answer": 1, "explain": "Hyperparameter werden vor dem Training gewählt. Gewichte wie \\(w\\) sind Parameter – sie werden gelernt."},
+    {"q": "Warum bewertet man ein Modell auf Daten, die es beim Training nicht gesehen hat?",
+     "options": ["Weil das schneller ist", "Weil sonst nur gemessen wird, wie gut es auswendig gelernt hat, nicht wie gut es verallgemeinert", "Weil scikit-learn es verlangt", "Damit die Labels geheim bleiben"],
+     "answer": 1, "explain": "Ziel ist Generalisierung auf neue Daten. Auf Trainingsdaten sieht ein überangepasstes Modell perfekt aus, versagt aber in der Praxis."},
+    {"q": "Im kNN-Spielplatz liegt ein einzelner blauer Punkt mitten zwischen vielen orangen. Was passiert bei \\(k = 1\\)?",
+     "options": ["Der Punkt wird ignoriert", "Um den Punkt entsteht eine kleine blaue Insel – das Modell überanpasst", "Die ganze Fläche wird blau", "Das Modell kann nicht trainiert werden"],
+     "answer": 1, "explain": "Mit \\(k = 1\\) entscheidet nur der nächste Nachbar. Ein Ausreißer bekommt so seine eigene Region – klassisches Overfitting."}
+  ]
+  </script></div>
+</main>
+<script src="../assets/vendor/katex/katex.min.js"></script>
+<script src="../assets/vendor/katex/auto-render.min.js"></script>
+<script src="../assets/js/course.js"></script>
+<script src="../assets/js/app.js"></script>
+<script src="../assets/js/anim/m01-l01.js"></script>
+</body>
+</html>
