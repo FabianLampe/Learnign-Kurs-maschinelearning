@@ -12,6 +12,8 @@ Jede Lektion folgt demselben Muster: **Intuition & Animation → Mathematik → 
 | 💻 Übungs-Notebooks mit Lückencode | `notebooks/modul-XX/` |
 | ✅ Lösungen (ausgeführt, mit Ausgaben) | `notebooks/modul-XX/loesungen/` |
 | 🛠 Mini-Projekt pro Modul | Projektseite + Notebook |
+| 📝 Notizbuch mit automatischem Inhaltsverzeichnis | Seitenleiste auf jeder Seite |
+| 🎥 Video-Prompts für alle 96 Themen (z. B. für LM Studio) | `prompts/video-prompts.md` |
 
 ## Loslegen
 
@@ -19,6 +21,11 @@ Jede Lektion folgt demselben Muster: **Intuition & Animation → Mathematik → 
 
 Öffne einfach `website/index.html` im Browser (Doppelklick). Es wird kein Internet benötigt – Formeln (KaTeX) und Videos liegen lokal.
 Dein Fortschritt (erledigte Lektionen, Quiz-Ergebnisse) wird im Browser gespeichert.
+
+**Notizen:** Über „📝 Notizen“ oben rechts (oder <kbd>Strg</kbd>+<kbd>Shift</kbd>+<kbd>N</kbd>) öffnest du auf jeder Seite dein Notizbuch.
+Zeilen wie `1. Titel`, `2. Titel` oder `1.1 Unterpunkt` werden automatisch zum anklickbaren Inhaltsverzeichnis.
+„+ Lektion als Überschrift“ fügt die aktuelle Lektion als nächste Nummer ein. Die Notizen liegen nur in deinem Browser –
+sichere sie ab und zu mit „Exportieren“ als Markdown-Datei.
 
 > Falls dein Browser den Fortschritt bei `file://`-Seiten nicht speichert (manche Firefox-Einstellungen), starte einen lokalen Server:
 > ```bash

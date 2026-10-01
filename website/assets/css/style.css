@@ -226,3 +226,41 @@ figure figcaption { color: var(--muted); font-size: .9rem; margin-top: .4rem; }
   main.content { padding: 1.4rem 16px 4rem; }
   body { font-size: 16px; }
 }
+
+/* ===== Notiz-Seitenleiste ===== */
+.notes-panel {
+  position: fixed; top: 52px; right: 0; bottom: 0; z-index: 18;
+  width: min(380px, 100vw);
+  display: flex; flex-direction: column; gap: .6rem;
+  padding: .9rem 1rem 1rem;
+  background: var(--surface); border-left: 1px solid var(--border);
+  transform: translateX(105%); transition: transform .25s;
+}
+body.notes-open .notes-panel { transform: none; box-shadow: -10px 0 40px rgba(0,0,0,.25); }
+body.notes-open #notes-toggle { border-color: var(--accent); }
+.notes-head { display: flex; align-items: center; gap: .6rem; }
+.notes-head strong { flex: 1; }
+.notes-status { color: var(--good); font-size: .82rem; }
+.notes-toc { background: var(--surface-2); border: 1px solid var(--border); border-radius: 10px; padding: .4rem .7rem; max-height: 35%; overflow-y: auto; flex: none; }
+.notes-toc summary { cursor: pointer; font-size: .8rem; font-weight: 700; text-transform: uppercase; letter-spacing: .06em; color: var(--muted); }
+.notes-toc ol { list-style: none; margin: .4rem 0 .2rem; padding: 0; }
+.notes-toc li { padding-left: calc(var(--lvl) * 1rem); }
+.notes-toc a { display: block; padding: .15rem .3rem; border-radius: 6px; color: var(--text); text-decoration: none; font-size: .9rem; line-height: 1.35; }
+.notes-toc a:hover { background: var(--surface); color: var(--accent); }
+.notes-toc .nr { font-family: var(--mono); color: var(--muted); font-size: .82rem; margin-right: .2rem; }
+.notes-panel textarea {
+  flex: 1; min-height: 120px; resize: none; width: 100%;
+  background: var(--bg); color: var(--text); border: 1px solid var(--border); border-radius: 10px;
+  padding: .7rem .8rem; font-family: var(--mono); font-size: .88rem; line-height: 1.55;
+}
+.notes-panel textarea:focus { outline: none; border-color: var(--accent); }
+.notes-actions { display: flex; flex-wrap: wrap; gap: .4rem; }
+.notes-actions .btn { font-size: .8rem; padding: .3rem .6rem; font-weight: 500; }
+/* Auf breiten Bildschirmen schiebt die Leiste den Inhalt zur Seite statt ihn zu verdecken */
+@media (min-width: 1250px) {
+  body.notes-open .layout, body.notes-open .hero, body.notes-open .howto, body.notes-open .grid { margin-right: 380px; }
+}
+@media (max-width: 860px) {
+  .topbar { gap: .5rem; }
+  #notes-toggle, #theme-toggle, #theme-btn, #reset-btn { font-size: .8rem; padding: .3rem .5rem; }
+}
