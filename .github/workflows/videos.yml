@@ -1,0 +1,71 @@
+# Rendert die Erklärvideos mit Erzählstimme und legt sie auf der Website ab.
+# Manuell starten: GitHub → Actions → "Erklärvideos mit Stimme rendern" → Run workflow
+name: Erklärvideos mit Stimme rendern
+
+on:
+  workflow_dispatch:
+    inputs:
+      engine:
+        description: "Stimme: edge = kostenlose Microsoft-Neuralstimme, openai = ChatGPT-Stimme (Secret OPENAI_API_KEY nötig)"
+        type: choice
+        options: [edge, openai]
+        default: edge
+      stimme:
+        description: "Stimmenname (leer = Standard: de-DE-SeraphinaMultilingualNeural bzw. marin)"
+        required: false
+        default: ""
+      qualitaet:
+        description: "Auflösung"
+        type: choice
+        options: [m, h]
+        default: m
+  push:
+    paths:
+      - "videos/**/*.py"
+      - "tools/render_videos.py"
+      - ".github/workflows/videos.yml"
+
+permissions:
+  contents: write
+
+concurrency:
+  group: videos-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  render:
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Systempakete für Manim
+        run: |
+          sudo apt-get update -q
+          sudo apt-get install -y -q libpango1.0-dev pkg-config ffmpeg
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Python-Pakete
+        run: pip install manim edge-tts openai
+
+      - name: Videos rendern
+        env:
+          STIMME_ENGINE: ${{ inputs.engine || 'edge' }}
+          STIMME: ${{ inputs.stimme }}
+          OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
+        run: python tools/render_videos.py --qualitaet ${{ inputs.qualitaet || 'm' }}
+
+      - name: Ergebnis committen
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add website/assets/videos videos/audio
+          if git diff --cached --quiet; then echo "Keine Änderungen."; exit 0; fi
+          git commit -m "Erklärvideos mit Stimme neu gerendert (${STIMME_ENGINE:-edge})"
+          git pull --rebase origin "${GITHUB_REF_NAME}"
+          git push origin "HEAD:${GITHUB_REF_NAME}"
+        env:
+          STIMME_ENGINE: ${{ inputs.engine || 'edge' }}
