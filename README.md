@@ -13,7 +13,7 @@ Jede Lektion folgt demselben Muster: **Intuition & Animation → Mathematik → 
 | ✅ Lösungen (ausgeführt, mit Ausgaben) | `notebooks/modul-XX/loesungen/` |
 | 🛠 Mini-Projekt pro Modul | Projektseite + Notebook |
 | 📝 Notizbuch mit automatischem Inhaltsverzeichnis | Seitenleiste auf jeder Seite |
-| 🎥 Video-Prompts für alle 96 Themen (z. B. für LM Studio) | `prompts/video-prompts.md` |
+| 🎥 NotebookLM: Prompts für alle 96 Themen + Quellen pro Modul | `notebooklm/` |
 
 ## Loslegen
 
